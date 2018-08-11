@@ -1,5 +1,8 @@
 # BotRoss
 
+[![Build Status](https://travis-ci.org/BotsForRoss/BotRoss.svg?branch=master)](https://travis-ci.org/BotsForRoss/BotRoss)
+[![Coverage Status](https://coveralls.io/repos/github/BotsForRoss/BotRoss/badge.svg)](https://coveralls.io/github/BotsForRoss/BotRoss)
+
 ## Inspiration
 
 > We tell people sometimes: we're like drug dealers, come into town and get everybody absolutely addicted to painting. It doesn't take much to get you addicted. The least little bit can do so much. This is unplanned it really just happens. Each highlight must have it's own private shadow. Steve wants reflections, so let's give him reflections.
