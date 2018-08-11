@@ -1,5 +1,13 @@
 # BotRoss
 
-Run `pip install -r requirements.txt`
+### Install
 
-Run another script (we're not sure yet)
+`pip install -r requirements.txt`
+
+### Test
+
+`python -m unittest discover bot_ross`
+
+### Run
+
+umm
