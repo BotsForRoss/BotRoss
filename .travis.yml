@@ -3,8 +3,8 @@ python:
   - "3.6"
 install:
   - pip install -r requirements.txt
-  - pip install coveralls
+  - pip install python-coveralls
 script:
   - coverage run --omit "*test*" --source=bot_ross -m unittest discover bot_ross
 after_success:
-  - coveralls --rcfile=.coverage
+  - coveralls
