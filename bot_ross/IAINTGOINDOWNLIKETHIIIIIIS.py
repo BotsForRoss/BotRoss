@@ -1,17 +1,17 @@
 import RPi.GPIO as GPIO
 import time 
 
-out1 = 13
-out2 = 11
-out3 = 15
-out4 = 12
+out1 = 31
+out3 = 33
+out2 = 35
+out4 = 37
 
 i=0
 positive=0
 negative=0
 y=0
 
-dt = 0.01
+dt = .01  # 0.01
 
 GPIO.setmode(GPIO.BOARD)
 GPIO.setup(out1,GPIO.OUT)
@@ -28,7 +28,7 @@ try:
       GPIO.output(out2,GPIO.LOW)
       GPIO.output(out3,GPIO.LOW)
       GPIO.output(out4,GPIO.LOW)
-      x = input()
+      x = int(input())
       if x>0:
           for y in range(x,0,-1):
               if negative==1:
