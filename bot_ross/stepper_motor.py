@@ -27,7 +27,7 @@ class StepperMotor:
     def update(self):
         current_dt = time.time() - self._last_update
         if current_dt >= self._DT:
-            step(direction=self._direction)
+            self.step(direction=self._direction)
             self._last_update = time.time()
 
     def step(self, direction=1):
@@ -81,7 +81,7 @@ class StepperMotor:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='run a stepper motor test')
-    parser.add_argument('--dt', type=float, default=0.1, help='how fast to run it?')
+    parser.add_argument('--dt', type=float, default=0.1, help='time delta between steps')
     parser.add_argument('--len', type=int, default=10, help='how long to run it (seconds)')
     args = parser.parse_args()
 
@@ -90,8 +90,8 @@ if __name__ == '__main__':
     
     sp1 = StepperMotor(
         out1=31,
-        out2=33,
-        out3=35,
+        out2=35,
+        out3=33,
         out4=37,
         dt=dt,
         forward=True
