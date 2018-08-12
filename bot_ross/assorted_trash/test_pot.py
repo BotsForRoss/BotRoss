@@ -2,13 +2,14 @@ import sys
 import unittest
 
 from unittest.mock import Mock, patch, call
+from pot import Pot
 
 mock_gpio = Mock()
 mock_rpi = Mock()
 mock_rpi.GPIO = mock_gpio
 sys.modules['RPi'] = mock_rpi
 sys.modules['RPi.GPIO'] = mock_gpio
-from pot import Pot
+
 
 class TestPot(unittest.TestCase):
     @patch("time.sleep")
