@@ -23,7 +23,7 @@ class Pot():
         count = 0
         GPIO.output(self.a_pin, True)
         while not GPIO.input(self.b_pin):
-            count = count +1
+            count = count + 1
         return count
 
     # create analog read function for reading charging and discharging data

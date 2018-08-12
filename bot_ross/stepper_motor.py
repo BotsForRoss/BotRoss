@@ -1,8 +1,7 @@
 import argparse
-import os
 import RPi.GPIO as GPIO
 import time
-import math
+
 
 class StepperMotor:
     def __init__(self, out1, out2, out3, out4, dt=0.1, forward=True):
