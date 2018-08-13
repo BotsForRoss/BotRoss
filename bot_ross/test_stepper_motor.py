@@ -121,30 +121,35 @@ class TestStepperMotor(unittest.TestCase):
         mock_timer.return_value = mock_timer_instance
         motor = StepperMotor(1, 2, 3, 4)
 
-        motor._step_and_reset_timer(10)
+        #  Tests with goal not reached
+        motor._step_and_reset_timer(10, 0, 10, StepperMotorDirection.FORWARD)
 
-        mock_step.assert_called_once_with(direction=StepperMotorDirection.FORWARD)
+        mock_step.assert_called_once_with(StepperMotorDirection.FORWARD)
         self.assertEqual(motor._last_update_time, 3000)
         mock_timer.assert_called_once()
         mock_timer_instance.start.assert_called_once()
 
+        #  Tests with goal reached
+        motor._step_and_reset_timer(10, 9, 10, StepperMotorDirection.FORWARD)
+
+        self.assertEqual(motor._last_update_time, 3000)
+        mock_timer_instance.assert_not_called()
+
     @patch.object(StepperMotor, '_step_and_reset_timer')
     @patch('time.time', autospec=True)
-    def test_set_frequency_faster(self, mock_time, mock_reset_timer):
+    def test_start_stepper_faster_frequency(self, mock_time, mock_reset_timer):
         # This tests the case where the time since last update is greater than the new period
         mock_time.return_value = 2
         motor = StepperMotor(1, 2, 3, 4)
         motor._timer = Mock(spec=threading.Timer)
         motor._last_update_time = 1
 
-        motor.set_frequency(20)
-
-        motor._timer.cancel.assert_called_once()
-        mock_reset_timer.assert_called_once_with(.05, StepperMotorDirection.FORWARD)
+        motor._start_stepper(20, 100)
+        mock_reset_timer.assert_called_once_with(.05, 0, 100, StepperMotorDirection.FORWARD)
 
     @patch('threading.Timer', autospec=True)
     @patch('time.time', autospec=True)
-    def test_set_frequency_slower(self, mock_time, mock_timer):
+    def test_start_stepper_slower_frequency(self, mock_time, mock_timer):
         # This tests the case where the time since last update is less than the new period
         mock_time.return_value = 2
         motor = StepperMotor(1, 2, 3, 4)
@@ -152,22 +157,37 @@ class TestStepperMotor(unittest.TestCase):
         mock_timer.return_value = mock_timer_instance
         motor._last_update_time = 1.99
 
-        motor.set_frequency(20)
+        motor._start_stepper(20, 100)
 
         mock_timer.assert_called_once()
         mock_timer_instance.start.assert_called_once()
 
     @patch.object(StepperMotor, '_step_and_reset_timer')
+    def test_start_stepper_forward(self, mock_reset_timer):
+        motor = StepperMotor(1, 2, 3, 4)
+        motor._start_stepper(20, 20)
+        mock_reset_timer.assert_called_once_with(.05, 0, 20, StepperMotorDirection.FORWARD)
+
+    @patch.object(StepperMotor, '_step_and_reset_timer')
+    def test_start_stepper_reverse(self, mock_reset_timer):
+        motor = StepperMotor(1, 2, 3, 4)
+        motor._start_stepper(20, -20)
+        mock_reset_timer.assert_called_once_with(.05, 0, -20, StepperMotorDirection.REVERSE)
+
+    @patch.object(StepperMotor, '_start_stepper')
     @patch('threading.Timer', autospec=True)
-    def test_set_frequency_stop(self, mock_timer, mock_reset_timer):
+    def test_set_stepper_stop(self, mock_timer, mock_start_stepper):
         motor = StepperMotor(1, 2, 3, 4)
         motor._timer = Mock(spec=threading.Timer)
 
-        motor.set_frequency(0)
-
+        motor.set_stepper(0, 100)
         motor._timer.cancel.assert_called_once()
-        mock_timer.assert_not_called()
-        mock_reset_timer.assert_not_called()
+        mock_start_stepper.assert_not_called()
+
+        motor._timer = Mock(spec=threading.Timer)
+        motor.set_stepper(100, 0)
+        motor._timer.cancel.assert_called_once()
+        mock_start_stepper.assert_not_called()
 
 
 if __name__ == '__main__':
