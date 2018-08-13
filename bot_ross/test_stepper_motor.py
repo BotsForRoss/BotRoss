@@ -157,6 +157,18 @@ class TestStepperMotor(unittest.TestCase):
         mock_timer.assert_called_once()
         mock_timer_instance.start.assert_called_once()
 
+    @patch.object(StepperMotor, '_step_and_reset_timer')
+    @patch('threading.Timer', autospec=True)
+    def test_set_frequency_stop(self, mock_timer, mock_reset_timer):
+        motor = StepperMotor(1, 2, 3, 4)
+        motor._timer = Mock(spec=threading.Timer)
+
+        motor.set_frequency(0)
+
+        motor._timer.cancel.assert_called_once()
+        mock_timer.assert_not_called()
+        mock_reset_timer.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()
