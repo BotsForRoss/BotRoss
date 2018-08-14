@@ -2,6 +2,7 @@ import argparse
 import RPi.GPIO as GPIO
 import time
 import threading
+import math
 
 from enum import Enum
 
@@ -10,12 +11,17 @@ class StepperMotorDirection(Enum):
     FORWARD = 1
     REVERSE = -1
 
+    def __int__(self):
+        return self.value
+
 
 class StepperMotor:
     def __init__(self, out1, out2, out3, out4):
-        self.i = 0  # The current step
+        self._i = 0  # The current position in step cycle
+
         self._timer = None
         self._last_update_time = 0
+
         self._out1 = out1
         self._out2 = out2
         self._out3 = out3
@@ -26,24 +32,37 @@ class StepperMotor:
         GPIO.setup(self._out3, GPIO.OUT)
         GPIO.setup(self._out4, GPIO.OUT)
 
-    def set_frequency(self, frequency, direction=StepperMotorDirection.FORWARD):
+    def set_stepper(self, frequency, goal):
         """
-        Set the frequency at which the stepper motor steps
+        Sets the frequency of steps and number of steps to be taken, and then starts the stepper
+            motor
 
         Arguments:
             frequency {float} -- The frequency at which the stepper motor should step (Hz)
-
-        Keyword Arguments:
-            direction {StepperMotorDirection} -- what direction the motor should go
-                (default: {StepperMotorDirection.FORWARD})
+            goal {int} -- The number of steps desired
         """
         # Stop the current timer
         if self._timer:
             self._timer.cancel()
 
-        # If we're trying to stop, just don't set another timer
-        if frequency == 0:
-            return
+        # If the motor is going to move, call _start_stepper
+        if frequency != 0 and goal != 0:
+            self._start_stepper(frequency, goal)
+
+    def _start_stepper(self, frequency, goal):
+        """
+        Starts the stepping feedback loop
+
+        Arguments:
+            frequency {float} -- The frequency at which the stepper motor should step (Hz)
+            goal {int} -- The number of steps desired
+        """
+        # For scope and such
+        direction = None
+        if goal > 0:
+            direction = StepperMotorDirection.FORWARD
+        else:
+            direction = StepperMotorDirection.REVERSE
 
         period = 1 / frequency
 
@@ -51,15 +70,15 @@ class StepperMotor:
         time_since_last_update = time.time() - self._last_update_time
         if time_since_last_update >= period:
             # If it has not stepped for a period longer than the new update period, step and start the repeating timer
-            self._step_and_reset_timer(period, direction)
+            self._step_and_reset_timer(period, 0, goal, direction)
         else:
             # If it's not time to step yet, set the timer to wait for the remaining time then repeat for the regular
             # period
             self._timer = threading.Timer(period - time_since_last_update,
-                                          lambda: self._step_and_reset_timer(period, direction))
+                                          lambda: self._step_and_reset_timer(period, 0, goal, direction))
             self._timer.start()
 
-    def _step_and_reset_timer(self, period, direction=StepperMotorDirection.FORWARD):
+    def _step_and_reset_timer(self, period, current_step, goal, direction):
         """
         Step the motor once and set a timer to call this function again
 
@@ -70,10 +89,13 @@ class StepperMotor:
             direction {StepperMotorDirection} -- what direction the motor should go
                 (default: {StepperMotorDirection.FORWARD})
         """
-        self.step(direction=direction)
+        self.step(direction)
+        current_step += int(direction)
         self._last_update_time = time.time()
-        self._timer = threading.Timer(period, lambda: self._step_and_reset_timer(period, direction))
-        self._timer.start()
+        if math.fabs(goal - current_step) > 0:
+            self._timer = threading.Timer(period, lambda: self._step_and_reset_timer(period, current_step,
+                                                                                     goal, direction))
+            self._timer.start()
 
     def calibrate(self):
         # How does one calibrate?
@@ -87,48 +109,48 @@ class StepperMotor:
             direction {StepperMotorDirection} -- what direction the motor should go
                 (default: {StepperMotorDirection.FORWARD})
         """
-        self.i += direction.value
-        if self.i == -1:
-            self.i = 7
-        elif self.i == 8:
-            self.i = 0
+        self._i += direction.value
+        if self._i == -1:
+            self._i = 7
+        elif self._i == 8:
+            self._i = 0
 
-        if self.i == 0:
+        if self._i == 0:
             GPIO.output(self._out1, GPIO.HIGH)
             GPIO.output(self._out2, GPIO.LOW)
             GPIO.output(self._out3, GPIO.LOW)
             GPIO.output(self._out4, GPIO.LOW)
-        elif self.i == 1:
+        elif self._i == 1:
             GPIO.output(self._out1, GPIO.HIGH)
             GPIO.output(self._out2, GPIO.HIGH)
             GPIO.output(self._out3, GPIO.LOW)
             GPIO.output(self._out4, GPIO.LOW)
-        elif self.i == 2:
+        elif self._i == 2:
             GPIO.output(self._out1, GPIO.LOW)
             GPIO.output(self._out2, GPIO.HIGH)
             GPIO.output(self._out3, GPIO.LOW)
             GPIO.output(self._out4, GPIO.LOW)
-        elif self.i == 3:
+        elif self._i == 3:
             GPIO.output(self._out1, GPIO.LOW)
             GPIO.output(self._out2, GPIO.HIGH)
             GPIO.output(self._out3, GPIO.HIGH)
             GPIO.output(self._out4, GPIO.LOW)
-        elif self.i == 4:
+        elif self._i == 4:
             GPIO.output(self._out1, GPIO.LOW)
             GPIO.output(self._out2, GPIO.LOW)
             GPIO.output(self._out3, GPIO.HIGH)
             GPIO.output(self._out4, GPIO.LOW)
-        elif self.i == 5:
+        elif self._i == 5:
             GPIO.output(self._out1, GPIO.LOW)
             GPIO.output(self._out2, GPIO.LOW)
             GPIO.output(self._out3, GPIO.HIGH)
             GPIO.output(self._out4, GPIO.HIGH)
-        elif self.i == 6:
+        elif self._i == 6:
             GPIO.output(self._out1, GPIO.LOW)
             GPIO.output(self._out2, GPIO.LOW)
             GPIO.output(self._out3, GPIO.LOW)
             GPIO.output(self._out4, GPIO.HIGH)
-        elif self.i == 7:
+        elif self._i == 7:
             GPIO.output(self._out1, GPIO.HIGH)
             GPIO.output(self._out2, GPIO.LOW)
             GPIO.output(self._out3, GPIO.LOW)
@@ -138,13 +160,11 @@ class StepperMotor:
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='run a stepper motor test')
     parser.add_argument('--freq', type=float, default=10, help='frequency of stepping')
-    parser.add_argument('--len', type=int, default=10, help='how long to run it (seconds)')
-    parser.add_argument('--dir', type=int, default=1, help='direction (1 for forward, -1 for reverse)')
+    parser.add_argument('--goal', type=int, default=100, help='number of steps desired')
     args = parser.parse_args()
 
     freq = args.freq
-    test_duration = args.len
-    direction = StepperMotorDirection(args.dir)
+    goal = args.goal
 
     sp1 = StepperMotor(
         out1=31,
@@ -153,6 +173,4 @@ if __name__ == '__main__':
         out4=37
     )
 
-    sp1.set_frequency(freq, direction=direction)
-    time.sleep(test_duration)
-    sp1.set_frequency(0)
+    sp1.set_stepper(freq, goal)
