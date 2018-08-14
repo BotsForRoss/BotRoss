@@ -180,9 +180,10 @@ class TestStepperMotor(unittest.TestCase):
         motor._start_stepper(20, -20)
         mock_reset_timer.assert_called_once_with(.05, 0, -20, StepperMotorDirection.REVERSE)
 
+    @patch.object(StepperMotor, 'wait_until_complete')
     @patch.object(StepperMotor, '_start_stepper')
     @patch('threading.Timer', autospec=True)
-    def test_set_stepper_stop(self, mock_timer, mock_start_stepper):
+    def test_set_stepper_stop(self, mock_timer, mock_start_stepper, mock_wait):
         motor = StepperMotor(1, 2, 3, 4)
         motor._timer = Mock(spec=threading.Timer)
 
@@ -194,6 +195,28 @@ class TestStepperMotor(unittest.TestCase):
         motor.set_stepper(100, 0)
         motor._timer.cancel.assert_called_once_with()
         mock_start_stepper.assert_not_called()
+        mock_wait.assert_not_called()
+
+    @patch.object(StepperMotor, 'wait_until_complete')
+    @patch.object(StepperMotor, '_start_stepper')
+    @patch('threading.Timer', autospec=True)
+    def test_set_stepper_wait(self, mock_timer, mock_start_stepper, mock_wait):
+        motor = StepperMotor(1, 2, 3, 4)
+        motor._timer = Mock(spec=threading.Timer)
+
+        motor.set_stepper(10, 100, wait=True)
+
+        motor._timer.cancel.assert_called_once_with()
+        mock_start_stepper.assert_called_once_with(10, 100)
+        mock_wait.assert_called_once_with()
+
+    def test_wait_until_complete(self):
+        motor = StepperMotor(1, 2, 3, 4)
+        motor.wait_until_complete()  # test with None timer
+
+        motor._timer = Mock(spec=threading.Timer)
+        motor.wait_until_complete()
+        motor._timer.join.assert_called_once_with()
 
 
 if __name__ == '__main__':

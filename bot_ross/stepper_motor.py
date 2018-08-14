@@ -32,14 +32,18 @@ class StepperMotor:
         GPIO.setup(self._out3, GPIO.OUT)
         GPIO.setup(self._out4, GPIO.OUT)
 
-    def set_stepper(self, frequency, goal):
+    def set_stepper(self, frequency, goal, wait=False):
         """
         Sets the frequency of steps and number of steps to be taken, and then starts the stepper
             motor
 
         Arguments:
             frequency {float} -- The frequency at which the stepper motor should step (Hz)
-            goal {int} -- The number of steps desired
+            goal {int} -- The number of steps desired. Negative means reverse.
+
+        Keyword Arguments:
+            wait {bool} -- True iff the calling thread should wait until the stepper motor has reached the input goal
+                (default: {False})
         """
         # Stop the current timer
         if self._timer:
@@ -48,6 +52,13 @@ class StepperMotor:
         # If the motor is going to move, call _start_stepper
         if frequency != 0 and goal != 0:
             self._start_stepper(frequency, goal)
+
+        if wait:
+            self.wait_until_complete()
+
+    def wait_until_complete(self):
+        if self._timer:
+            self._timer.join()
 
     def _start_stepper(self, frequency, goal):
         """
