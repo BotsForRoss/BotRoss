@@ -126,7 +126,8 @@ class TestStepperMotor(unittest.TestCase):
 
         mock_step.assert_called_once_with(StepperMotorDirection.FORWARD)
         self.assertEqual(motor._last_update_time, 3000)
-        self.assertTrue(mock_timer.called)
+        mock_timer.assert_called_once_with(10, motor._step_and_reset_timer,
+                                           args=(10, 1, 10, StepperMotorDirection.FORWARD))
         mock_timer_instance.start.assert_called_once_with()
 
         #  Tests with goal reached
@@ -151,15 +152,20 @@ class TestStepperMotor(unittest.TestCase):
     @patch('time.time', autospec=True)
     def test_start_stepper_slower_frequency(self, mock_time, mock_timer):
         # This tests the case where the time since last update is less than the new period
-        mock_time.return_value = 2
+        mock_time.return_value = 1.05
         motor = StepperMotor(1, 2, 3, 4)
         mock_timer_instance = Mock(spec=threading.Timer)
         mock_timer.return_value = mock_timer_instance
-        motor._last_update_time = 1.99
+        motor._last_update_time = 1
 
-        motor._start_stepper(20, 100)
+        motor._start_stepper(10, 100)
 
-        self.assertTrue(mock_timer.called)
+        calls = mock_timer.call_args_list
+        self.assertEqual(len(calls), 1)
+        args, kwargs = calls[0]
+        self.assertAlmostEqual(args[0], .05)
+        self.assertEqual(args[1], motor._step_and_reset_timer)
+        self.assertEqual(kwargs['args'], (.1, 0, 100, StepperMotorDirection.FORWARD))
         mock_timer_instance.start.assert_called_once_with()
 
     @patch.object(StepperMotor, '_step_and_reset_timer')

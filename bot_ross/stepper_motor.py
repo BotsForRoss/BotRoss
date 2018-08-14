@@ -75,7 +75,7 @@ class StepperMotor:
             # If it's not time to step yet, set the timer to wait for the remaining time then repeat for the regular
             # period
             self._timer = threading.Timer(period - time_since_last_update,
-                                          lambda: self._step_and_reset_timer(period, 0, goal, direction))
+                                          self._step_and_reset_timer, args=(period, 0, goal, direction))
             self._timer.start()
 
     def _step_and_reset_timer(self, period, current_step, goal, direction):
@@ -93,8 +93,8 @@ class StepperMotor:
         current_step += int(direction)
         self._last_update_time = time.time()
         if math.fabs(goal - current_step) > 0:
-            self._timer = threading.Timer(period, lambda: self._step_and_reset_timer(period, current_step,
-                                                                                     goal, direction))
+            self._timer = threading.Timer(period, self._step_and_reset_timer,
+                                          args=(period, current_step, goal, direction))
             self._timer.start()
 
     def calibrate(self):
