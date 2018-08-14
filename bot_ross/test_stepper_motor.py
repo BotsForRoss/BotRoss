@@ -215,6 +215,12 @@ class TestStepperMotor(unittest.TestCase):
         motor.wait_until_complete()  # test with None timer
 
         motor._timer = Mock(spec=threading.Timer)
+        motor._is_complete = False
+
+        def make_complete():
+            motor._is_complete = True
+
+        motor._timer.join.side_effect = make_complete
         motor.wait_until_complete()
         motor._timer.join.assert_called_once_with()
 

@@ -20,6 +20,7 @@ class StepperMotor:
         self._i = 0  # The current position in step cycle
 
         self._timer = None
+        self._is_complete = True
         self._last_update_time = 0
 
         self._out1 = out1
@@ -45,19 +46,22 @@ class StepperMotor:
             wait {bool} -- True iff the calling thread should wait until the stepper motor has reached the input goal
                 (default: {False})
         """
+        # If stopping, mark complete
+        self._is_complete = frequency == 0 or goal == 0
+
         # Stop the current timer
         if self._timer:
             self._timer.cancel()
 
         # If the motor is going to move, call _start_stepper
-        if frequency != 0 and goal != 0:
+        if not self._is_complete:
             self._start_stepper(frequency, goal)
 
         if wait:
             self.wait_until_complete()
 
     def wait_until_complete(self):
-        if self._timer:
+        while self._timer and not self._is_complete:
             self._timer.join()
 
     def _start_stepper(self, frequency, goal):
@@ -107,6 +111,8 @@ class StepperMotor:
             self._timer = threading.Timer(period, self._step_and_reset_timer,
                                           args=(period, current_step, goal, direction))
             self._timer.start()
+        else:
+            self._is_complete = True
 
     def calibrate(self):
         # How does one calibrate?
