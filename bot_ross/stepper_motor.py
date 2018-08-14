@@ -164,7 +164,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     freq = args.freq
-    goal = args.len
+    goal = args.goal
 
     sp1 = StepperMotor(
         out1=31,
