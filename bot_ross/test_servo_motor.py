@@ -15,7 +15,7 @@ class TestServoMotor(unittest.TestCase):
     def test_init(self, mock_configure):
         motor = ServoMotor(self.mock_bus, 'addr!')
         self.assertEqual(motor.addr, 'addr!')
-        mock_configure.assert_called_once()
+        mock_configure.assert_called_once_with()
 
     def test_configure(self):
         ServoMotor(self.mock_bus, 'addr!')
