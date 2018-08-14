@@ -190,4 +190,7 @@ if __name__ == '__main__':
         out4=37
     )
 
-    sp1.set_stepper(freq, goal)
+    try:
+        sp1.set_stepper(freq, goal, wait=True)
+    finally:
+        GPIO.cleanup()
