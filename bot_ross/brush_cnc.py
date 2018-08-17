@@ -1,5 +1,6 @@
 import defines
 from stepper_motor import StepperMotor, StepperMotorDirection  # noqa: 402
+from switch import Switch
 
 
 class BrushCNC():
@@ -28,5 +29,31 @@ class BrushCNC():
             defines.STEPPER_Z_3,
             defines.STEPPER_Z_4
         )
+        self._switch_reset_x = Switch(defines.SWITCH_RESET_X)
+        self._switch_reset_y = Switch(defines.SWITCH_RESET_Y)
+        self._switch_reset_z = Switch(defines.SWITCH_RESET_Z)
 
-    # Control Stuff!
+    def zeroing(self):
+        """
+        Uses the limit switches for each of the motors to bring them all back to a zeroed position
+        """
+        x_zeroed, y_zeroed, z_zeroed = False, False, False
+        self._stepper_x.set_stepper(defines.STEPPER_X_MAX_HZ / 2, -defines.BOARD_X_LENGTH)
+        self._stepper_y_left.set_stepper(defines.STEPPER_Y_MAX_HZ / 2, -defines.BOARD_Y_LENGTH)
+        self._stepper_y_right.set_stepper(defines.STEPPER_Y_MAX_HZ / 2, -defines.BOARD_Y_LENGTH)
+        self._stepper_z.set_stepper(defines.STEPPER_Z_MAX_HZ / 2, -defines.BOARD_Z_LENGTH)
+
+        while x_zeroed is False or y_zeroed is False or z_zeroed is False:
+            if x_zeroed is False and self._switch_reset_x.get_state() is True:
+                self._stepper_x.set_stepper(0, 0)
+                x_zeroed = True
+
+            if y_zeroed is False and self._switch_reset_y.get_state() is True:
+                self._stepper_y_left.set_stepper(0, 0)
+                self._stepper_y_right.set_stepper(0, 0)
+                y_zeroed = True
+
+            if z_zeroed is False and self._switch_reset_z.get_state() is True:
+                self._stepper_z.set_stepper(0, 0)
+                z_zeroed = True
+
