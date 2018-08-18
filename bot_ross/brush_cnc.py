@@ -46,14 +46,17 @@ class BrushCNC():
         while x_zeroed is False or y_zeroed is False or z_zeroed is False:
             if x_zeroed is False and self._switch_reset_x.get_state() is True:
                 self._stepper_x.set_stepper(0, 0)
+                self._stepper_x.zero()
                 x_zeroed = True
 
             if y_zeroed is False and self._switch_reset_y.get_state() is True:
                 self._stepper_y_left.set_stepper(0, 0)
                 self._stepper_y_right.set_stepper(0, 0)
+                self._stepper_y_left.zero()
+                self._stepper_y_right.zero()
                 y_zeroed = True
 
             if z_zeroed is False and self._switch_reset_z.get_state() is True:
                 self._stepper_z.set_stepper(0, 0)
+                self._stepper_z.zero()
                 z_zeroed = True
-
