@@ -3,42 +3,7 @@ import RPi.GPIO as GPIO
 
 from stepper_motor import StepperMotor
 from xbox import Joystick
-
-
-class AnalogStickAxisBinding():
-    MAX_FREQUENCY = 10  # Hz
-    FOREVER = 2048
-
-    def __init__(self, stick_axis, stepper_motor):
-        self._stick_axis = stick_axis
-        self._stepper_motor = stepper_motor
-
-    def _analog_to_motor_input(self, val):
-        """
-        Convert an analog (stick) input to a stepper_motor command
-
-        Arguments:
-            val {float} -- the analog stick input from -1 to 1
-
-        Returns:
-            (freq {float}, goal {int}) -- the frequency and goal to set the motor to
-        """
-
-        freq = abs(val * self.MAX_FREQUENCY)
-        goal = self.FOREVER if val > 0 else -self.FOREVER
-        return freq, goal
-
-    def update(self):
-        """
-        Update the stepper motor to react to the current analog stick input
-
-        Returns:
-            (stick {float}, (freq {float}, goal {int})) -- the input from the stick axis and output to the motor
-        """
-        val = self._stick_axis()
-        freq, goal = self._analog_to_motor_input(val)
-        self._stepper_motor.set_stepper(freq, goal)
-        return (val, (freq, goal))
+from xbox_bindings import stick_axis_to_stepper_motor_binding
 
 
 def control_with_xbox():
@@ -72,14 +37,19 @@ def control_with_xbox():
     # )
 
     # bind the controller inputs to motors
-    x_binding = AnalogStickAxisBinding(xbox.leftX, stepper_motor_x)
-    y_binding = AnalogStickAxisBinding(xbox.leftY, stepper_motor_y_left)
+    x_binding = stick_axis_to_stepper_motor_binding(xbox.leftX, stepper_motor_x)
+    y_binding = stick_axis_to_stepper_motor_binding(xbox.leftY, stepper_motor_y_left)
 
     while not xbox.Back():  # "Back" is the select button
-        x_in, (x_freq, x_goal) = x_binding.update()
-        y_in, (y_freq, y_goal) = y_binding.update()
-        print('stick: {:.3f}/{:.3f}\tfreq: {:.3f}/{:.3f}\tgoal: {:5d}/{:5d}'.format(x_in, y_in, x_freq, y_freq, x_goal,
-            y_goal), end='\r')
+        x_in, x_out = x_binding()
+        y_in, y_out = y_binding()
+        print(
+            'stick: {:.3f}/{:.3f}\tfreq: {:.3f}/{:.3f}\tgoal: {:5d}/{:5d}'.format(
+                x_in, y_in,
+                x_out['frequency'], y_out['frequency'],
+                x_out['goal'], y_out['goal']),
+            end='\r'
+        )
 
     xbox.close()
     GPIO.cleanup()
