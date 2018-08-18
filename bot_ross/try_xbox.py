@@ -23,12 +23,12 @@ def control_with_xbox():
         defines.STEPPER_Y_LEFT_3,
         defines.STEPPER_Y_LEFT_4
     )
-    # stepper_motor_y_right = StepperMotor(
-    #     defines.STEPPER_Y_RIGHT_1,
-    #     defines.STEPPER_Y_RIGHT_2,
-    #     defines.STEPPER_Y_RIGHT_3,
-    #     defines.STEPPER_Y_RIGHT_4
-    # )
+    stepper_motor_y_right = StepperMotor(
+        defines.STEPPER_Y_RIGHT_1,
+        defines.STEPPER_Y_RIGHT_2,
+        defines.STEPPER_Y_RIGHT_3,
+        defines.STEPPER_Y_RIGHT_4
+    )
     # stepper_motor_z = StepperMotor(
     #     defines.STEPPER_Z_1,
     #     defines.STEPPER_Z_2,
@@ -39,6 +39,7 @@ def control_with_xbox():
     # bind the controller inputs to motors
     x_binding = stick_axis_to_stepper_motor_binding(xbox.leftX, stepper_motor_x)
     y_binding = stick_axis_to_stepper_motor_binding(xbox.leftY, stepper_motor_y_left)
+    y_binding = stick_axis_to_stepper_motor_binding(xbox.leftY, stepper_motor_y_right)
 
     while not xbox.Back():  # "Back" is the select button
         x_in, x_out = x_binding()
@@ -51,6 +52,7 @@ def control_with_xbox():
             end='\r'
         )
 
+    print('')  # newline to clean up \r logs
     xbox.close()
     GPIO.cleanup()
 
