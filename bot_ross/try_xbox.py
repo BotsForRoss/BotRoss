@@ -28,7 +28,7 @@ class AnalogStickAxisBinding():
         goal = self.FOREVER if val > 0 else -self.FOREVER
         return freq, goal
 
-    def update(self, log=False):
+    def update(self):
         """
         Update the stepper motor to react to the current analog stick input
 
@@ -38,8 +38,6 @@ class AnalogStickAxisBinding():
         val = self._stick_axis()
         freq, goal = self._analog_to_motor_input(val)
         self._stepper_motor.set_stepper(freq, goal)
-        if log:
-            print('\rstick: {0:.3f}\tfreq: {0:.3f}\tgoal: {}'.format(val, freq, goal))
         return (val, (freq, goal))
 
 
@@ -78,8 +76,10 @@ def control_with_xbox():
     y_binding = AnalogStickAxisBinding(xbox.leftY, stepper_motor_y_left)
 
     while not xbox.Back():  # "Back" is the select button
-        for binding in [x_binding, y_binding]:
-            binding.update(log=True)
+        x_in, (x_freq, x_goal) = x_binding.update()
+        y_in, (y_freq, y_goal) = y_binding.update()
+        print('stick: {:.3f}/{:.3f}\tfreq: {:.3f}/{:.3f}\tgoal: {:5d}/{:5d}'.format(x_in, y_in, x_freq, y_freq, x_goal,
+            y_goal), end='\r')
 
     xbox.close()
     GPIO.cleanup()
