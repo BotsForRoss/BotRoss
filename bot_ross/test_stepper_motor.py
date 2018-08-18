@@ -124,6 +124,7 @@ class TestStepperMotor(unittest.TestCase):
         #  Tests with goal not reached
         motor._step_and_reset_timer(10, 0, 10, StepperMotorDirection.FORWARD)
 
+        self.assertEqual(motor._pos, 1)
         mock_step.assert_called_once_with(StepperMotorDirection.FORWARD)
         self.assertEqual(motor._last_update_time, 3000)
         mock_timer.assert_called_once_with(10, motor._step_and_reset_timer,
@@ -135,6 +136,7 @@ class TestStepperMotor(unittest.TestCase):
 
         self.assertEqual(motor._last_update_time, 3000)
         mock_timer_instance.assert_not_called()
+        self.assertEqual(motor._pos, 2)
 
     @patch.object(StepperMotor, '_step_and_reset_timer')
     @patch('time.time', autospec=True)
@@ -223,6 +225,13 @@ class TestStepperMotor(unittest.TestCase):
         motor._timer.join.side_effect = make_complete
         motor.wait_until_complete()
         motor._timer.join.assert_called_once_with()
+
+    @patch.object(StepperMotor, 'set_stepper')
+    def test_set_stepper_absolute(self, mock_set_stepper):
+        motor = StepperMotor(1, 2, 3, 4)
+        motor._pos = 200
+        motor.set_stepper_absolute(100, 50, wait=True)
+        mock_set_stepper.assert_called_once_with(100, -150, wait=True)
 
 
 if __name__ == '__main__':
