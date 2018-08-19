@@ -23,6 +23,7 @@ class StepperMotor:
         self._timer = None
         self._is_complete = True
         self._last_update_time = 0
+        self._pos = 0  # where we at
 
         self._out1 = out1
         self._out2 = out2
@@ -33,6 +34,21 @@ class StepperMotor:
         GPIO.setup(self._out2, GPIO.OUT)
         GPIO.setup(self._out3, GPIO.OUT)
         GPIO.setup(self._out4, GPIO.OUT)
+
+    def set_stepper_absolute(self, frequency, setpoint, wait=False):
+        """
+        Set the stepper motor's frequency (speed) and desired position
+
+        Arguments:
+            frequency {float} -- The frequency at which the stepper motor should step (Hz)
+            setpoint {int} -- The absolute position the stepper motor should move towards, in steps
+
+        Keyword Arguments:
+            wait {bool} -- True iff the calling thread should wait until the stepper motor has reached the input goal
+                (default: {False})
+        """
+        diff = setpoint - self._pos
+        self.set_stepper(frequency, diff, wait=wait)
 
     def set_stepper(self, frequency, goal, wait=False):
         """
@@ -107,6 +123,7 @@ class StepperMotor:
         """
         self.step(direction)
         current_step += int(direction)
+        self._pos += int(direction)
         self._last_update_time = time.time()
         if math.fabs(goal - current_step) > 0:
             self._timer = threading.Timer(period, self._step_and_reset_timer,
@@ -115,9 +132,11 @@ class StepperMotor:
         else:
             self._is_complete = True
 
-    def calibrate(self):
-        # How does one calibrate?
-        pass
+    def zero(self):
+        """
+        Set the stepper motor's current position as zero
+        """
+        self._pos = 0
 
     def step(self, direction=StepperMotorDirection.FORWARD):
         """

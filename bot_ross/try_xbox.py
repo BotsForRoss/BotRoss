@@ -59,6 +59,7 @@ def control_with_xbox():
             end='\r'
         )
 
+    print('')  # newline to clean up \r logs
     xbox.close()
     GPIO.cleanup()
 
