@@ -14,7 +14,7 @@ from stepper_motor import StepperMotor, StepperMotorDirection  # noqa: 402
 
 class TestStepperMotor(unittest.TestCase):
     def setUp(self):
-        mock_gpio.BOARD = 'boarderino'
+        mock_gpio.BCM = 'boarderino'
         mock_gpio.OUT = 'out!'
         mock_gpio.HIGH = 'hi'
         mock_gpio.LOW = 'lo'

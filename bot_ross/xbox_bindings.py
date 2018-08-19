@@ -1,4 +1,4 @@
-_MAX_FREQUENCY = 10  # Hz
+_MAX_FREQUENCY = 300  # Hz
 _FOREVER = 4096
 
 
