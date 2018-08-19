@@ -18,9 +18,8 @@ class RawPWMServoMotor():
         MS = 1 / 1000
         period = 1 / 50
 
-        """
-        Convert the input value from -1 to 1 to an on time from 1 ms (full back) to 2 ms (full forward)
-        """
+        # Convert the input value from -1 to 1 to an on time from 1 ms (full back) to 2 ms (full forward)
+        # TODO figure out why this range was way off. We may have more success with the I2C version.
         on_time = (self._speed + 1) * MS
         off_time = period - on_time
 
@@ -35,7 +34,7 @@ if __name__ == '__main__':
     .6 to -.6 seems to be the actual range
     """
     if len(sys.argv) < 2:
-        print('gimme a speed from -1 to 1 please')
+        print('enter a speed from -1 to 1')
         sys.exit()
     speed = float(sys.argv[1])
 
@@ -46,4 +45,3 @@ if __name__ == '__main__':
             motor.update()
     except KeyboardInterrupt:
         GPIO.cleanup()
-

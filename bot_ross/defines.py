@@ -4,6 +4,7 @@ BOARD_Y_LENGTH = -1
 BOARD_Z_LENGTH = -1
 
 #  Stepper motor out-channel declarations
+#  In GPIO.BCM layout (not GPIO.BOARD)
 STEPPER_X_1 = 6
 STEPPER_X_2 = 19
 STEPPER_X_3 = 22

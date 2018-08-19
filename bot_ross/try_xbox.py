@@ -42,20 +42,20 @@ def control_with_xbox():
     # bind the controller inputs to motors
     x_binding = stick_axis_to_stepper_motor_binding(xbox.leftX, stepper_motor_x)
     y_binding = stick_axis_to_stepper_motor_binding(xbox.leftY, stepper_motor_y_left)
-    """z_binding = stick_axis_to_stepper_motor_binding(xbox.rightY, stepper_motor_z)"""
-
+    z_binding = stick_axis_to_stepper_motor_binding(xbox.rightY, stepper_motor_z)
 
     while not xbox.Back():  # "Back" is the select button
         x_in, x_out = x_binding()
         y_in, y_out = y_binding()
-        """z_binding()"""
+        z_in, z_out = z_binding()
         servo_motor.set_speed(xbox.rightY())
         servo_motor.update()
         print(
-            'stick: {:.3f}/{:.3f}\tfreq: {:.3f}/{:.3f}\tgoal: {:5d}/{:5d}'.format(
-                x_in, y_in,
-                x_out['frequency'], y_out['frequency'],
-                x_out['goal'], y_out['goal']),
+            'stick: {:.3f}/{:.3f}/{:.3f}\tfreq: {:.3f}/{:.3f}/{:.3f}\tgoal: {:5d}/{:5d}/{:5d}'.format(
+                x_in, y_in, z_in,
+                x_out['frequency'], y_out['frequency'], z_out['frequency'],
+                x_out['goal'], y_out['goal'], z_out['goal']
+            ),
             end='\r'
         )
 
