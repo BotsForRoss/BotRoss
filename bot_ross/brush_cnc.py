@@ -43,17 +43,17 @@ class BrushCNC():
         self._stepper_y_right.set_stepper(defines.STEPPER_Y_MAX_HZ / 2, -defines.BOARD_Y_LENGTH)
         self._stepper_z.set_stepper(defines.STEPPER_Z_MAX_HZ / 2, -defines.BOARD_Z_LENGTH)
 
-        while x_zeroed is False or y_zeroed is False or z_zeroed is False:
-            if x_zeroed is False and self._switch_reset_x.get_state() is True:
+        while not x_zeroed or not y_zeroed or not z_zeroed:
+            if not x_zeroed and self._switch_reset_x.get_state():
                 self._stepper_x.set_stepper(0, 0)
                 x_zeroed = True
 
-            if y_zeroed is False and self._switch_reset_y.get_state() is True:
+            if not y_zeroed and self._switch_reset_y.get_state():
                 self._stepper_y_left.set_stepper(0, 0)
                 self._stepper_y_right.set_stepper(0, 0)
                 y_zeroed = True
 
-            if z_zeroed is False and self._switch_reset_z.get_state() is True:
+            if not z_zeroed and self._switch_reset_z.get_state():
                 self._stepper_z.set_stepper(0, 0)
                 z_zeroed = True
 

@@ -63,7 +63,7 @@ class ServoMotor():
 
     def set_angle(self, channel, angle):
         """
-        Set the angle of the motor.
+        Set the angle of the motor. It's actually a speed, but okay.
 
         Arguments:
             channel {int} -- the LED channel to set in the range [0, 15]
@@ -71,6 +71,16 @@ class ServoMotor():
         """
         duty_cycle_raw = round(1250 - 4.6 * angle)
         self.set_duty_cycle(channel, duty_cycle_raw)
+
+    def set_speed(self, channel, speed):
+        """
+        Set the speed
+
+        Arguments:
+            channel {int}
+            speed {float}
+        """
+        self.set_angle(channel, speed * 90)
 
 
 if __name__ == '__main__':

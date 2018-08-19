@@ -1,4 +1,5 @@
 import argparse
+import defines
 import RPi.GPIO as GPIO
 import time
 import threading
@@ -27,7 +28,7 @@ class StepperMotor:
         self._out2 = out2
         self._out3 = out3
         self._out4 = out4
-        GPIO.setmode(GPIO.BOARD)
+        GPIO.setmode(GPIO.BCM)
         GPIO.setup(self._out1, GPIO.OUT)
         GPIO.setup(self._out2, GPIO.OUT)
         GPIO.setup(self._out3, GPIO.OUT)
@@ -126,11 +127,7 @@ class StepperMotor:
             direction {StepperMotorDirection} -- what direction the motor should go
                 (default: {StepperMotorDirection.FORWARD})
         """
-        self._i += direction.value
-        if self._i == -1:
-            self._i = 7
-        elif self._i == 8:
-            self._i = 0
+        self._i = (self._i + direction.value) % 8
 
         if self._i == 0:
             GPIO.output(self._out1, GPIO.HIGH)
@@ -184,10 +181,10 @@ if __name__ == '__main__':
     goal = args.goal
 
     sp1 = StepperMotor(
-        out1=31,
-        out2=35,
-        out3=33,
-        out4=37
+        out1=defines.STEPPER_Z_1,
+        out2=defines.STEPPER_Z_2,
+        out3=defines.STEPPER_Z_3,
+        out4=defines.STEPPER_Z_4
     )
 
     try:
