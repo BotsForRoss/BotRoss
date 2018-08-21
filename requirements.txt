@@ -1,4 +1,5 @@
 coverage
 smbus2
 git+https://github.com/BotsForRoss/Xbox.git
-git+https://github.com/Nikolay-Kha/PyCNC.git
+pycnc
+pyreadline  # for Windows readline compatibility
