@@ -166,3 +166,16 @@ class XboxToGcode(Thread):
             return 'G0 X{} Y{} Z{} F{}'.format(dx, dy, dz, speed)
 
         return None
+
+
+if __name__ == '__main__':
+    def do_line(line):
+        padding = 80 - len(line)
+        if padding > 0:
+            line = line + ' ' * padding
+        print(line, end='\r')
+        return True
+
+    gcode_generator = XboxToGcode(do_line, rate=1.0)
+    gcode_generator.start()
+    gcode_generator.join()
