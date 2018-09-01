@@ -18,7 +18,8 @@ class XboxToGcode(Thread):
         Pipe xbox controller input into gcode output
 
         Arguments:
-            callback {function} -- a function that takes a line of gcode every time the controller updates
+            callback {function} -- a function that takes a line of gcode every time the controller updates.
+                Returns True iff the callback succeeded.
 
         Keyword Arguments:
             rate {float} -- the maximum update rate of the controller, in Hz (default: {60.0})
@@ -27,6 +28,7 @@ class XboxToGcode(Thread):
         self._send_gcode = callback
         self._send_kill_command = kill_callback
         self._period = 1 / rate
+        self._should_stop = False
         self._controller = Xbox360Controller()
         super().__init__()
 
@@ -41,7 +43,9 @@ class XboxToGcode(Thread):
 
             command = self._get_gcode()
             if command:
-                self._send_gcode(command)
+                success = self._send_gcode(command)
+                if not success:
+                    break
 
             # wait so that the machine is not updated faster than the requested rate
             execution_time = time.time() - start_time
@@ -64,7 +68,7 @@ class XboxToGcode(Thread):
         dy = self._stick_to_distance(self._controller.axis_l.y)
 
         distance = math.sqrt(dx * dx + dy * dy)
-        speed = distance / self._xbox.refreshDelay
+        speed = distance / self._period
 
         # do a rapid move
         if speed >= self._DEADZONE:
@@ -81,17 +85,11 @@ class XboxToGcode(Thread):
         Returns:
             float -- the distance in mm the axis should move in one update based on the stick input
         """
-        return stick * self._MAXSPEED * self._xbox.refreshDelay
+        return stick * self._MAXSPEED * self._period
 
 
 if __name__ == '__main__':
-    def _do_line_carefully(line):
-        success = cnc.main.do_line(line)
-        if not success:
-            raise RuntimeError('An error occurred in gmachine')
-
-    try:
-        gcode_generator = XboxToGcode(_do_line_carefully)
-        gcode_generator.join()
-    finally:
-        cnc.machine.release()
+    gcode_generator = XboxToGcode(cnc.main.do_line)
+    gcode_generator.start()
+    gcode_generator.join()
+    cnc.main.machine.release()
