@@ -2,7 +2,7 @@ import cnc.main
 import cnc.logging_config
 import cnc.config as config
 
-from bot_ross.xbox_to_gcode import XboxToGcode
+from xbox_to_gcode import XboxToGcode
 
 
 if __name__ == '__main__':
