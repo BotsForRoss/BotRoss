@@ -1,4 +1,3 @@
-import cnc
 import math
 import time
 
@@ -6,14 +5,18 @@ from threading import Thread
 from xbox360controller import Xbox360Controller
 
 
+# The minimum speed (in mm/second) for the machine to accept a move command
+_DEFAULT_MINSPEED = 1 / 60.0  # mm/second
+
+# The maximum speed (in mm/second) the machine can move in each axis
+_DEFAULT_MAXSPEED = 1  # mm/second
+
+
 class XboxToGcode(Thread):
-    # The minimum speed (in mm/second) for the machine to accept a move command
-    _DEADZONE = 1
-
-    # The maximum speed (in mm/second) the machine can move in each axis
-    _MAXSPEED = 10
-
-    def __init__(self, callback, kill_callback=None, rate=30.0):
+    def __init__(self, callback, kill_callback=None, rate=30.0,
+                 range_x=(_DEFAULT_MINSPEED, _DEFAULT_MAXSPEED),
+                 range_y=(_DEFAULT_MINSPEED, _DEFAULT_MAXSPEED),
+                 range_z=(_DEFAULT_MINSPEED, _DEFAULT_MAXSPEED)):
         """
         Pipe xbox controller input into gcode output
 
@@ -24,10 +27,17 @@ class XboxToGcode(Thread):
         Keyword Arguments:
             rate {float} -- the maximum update rate of the controller, in Hz (default: {60.0})
             kill_callback {function} -- a function that will be called immediately when the stop button is pressed
+            range_x {(float, float)} -- a tuple of (min speed, max speed) for the range of speeds this should command
+                in the x axis, in mm/second
+            range_y {(float, float)} -- same as range_x but for the y axis
+            range_z {(float, float)} -- same as range_x but for the z axis
         """
         self._send_gcode = callback
         self._send_kill_command = kill_callback
         self._period = 1 / rate
+        self._range_x = range_x
+        self._range_y = range_y
+        self._range_z = range_z
         self._should_stop = False
         self._controller = Xbox360Controller()
         super().__init__()
@@ -55,7 +65,7 @@ class XboxToGcode(Thread):
 
         self._controller.close()
 
-    def _kill(self):
+    def _kill(self, _):
         if self._send_kill_command:
             self._send_kill_command()
         self._should_stop = True
@@ -64,32 +74,14 @@ class XboxToGcode(Thread):
         """
         Get a line of gcode for the current state of the xbox controller, or None if it is inactive.
         """
-        dx = self._stick_to_distance(self._controller.axis_l.x)
-        dy = self._stick_to_distance(self._controller.axis_l.y)
+        vel_x = self._controller.axis_l.x * self._range_x[1]
+        vel_y = self._controller.axis_l.y * self._range_y[1]
 
-        distance = math.sqrt(dx * dx + dy * dy)
-        speed = distance / self._period
-
-        # do a rapid move
-        if speed >= self._DEADZONE:
-            speed /= 60.0  # convert to mm/minute
+        if vel_x > self._range_x[0] or vel_y > self._range_y[0]:
+            # do a rapid move
+            dx = vel_x * self._period
+            dy = vel_y * self._period
+            speed = math.sqrt(vel_x * vel_x + vel_y * vel_y) * 60.0  # convert to mm/minute
             return 'G0 X{} Y{} F{}'.format(dx, dy, speed)
 
         return None
-
-    def _stick_to_distance(self, stick):
-        """
-        Arguments:
-            stick {float} -- the value of an analog stick axis from -1 to 1
-
-        Returns:
-            float -- the distance in mm the axis should move in one update based on the stick input
-        """
-        return stick * self._MAXSPEED * self._period
-
-
-if __name__ == '__main__':
-    gcode_generator = XboxToGcode(cnc.main.do_line)
-    gcode_generator.start()
-    gcode_generator.join()
-    cnc.main.machine.release()
