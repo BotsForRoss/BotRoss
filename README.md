@@ -28,7 +28,7 @@
 `pip install -r requirements.txt`
 
 Run the following for xbox controller support (only on Linux):
-`sudo apt-get install xboxdrv`
+`pip install xbox360controller`
 
 ### Test
 
@@ -37,7 +37,7 @@ Run the following for xbox controller support (only on Linux):
 ### Run
 
 To control the X and Y stepper motors with the left analog stick of an xbox controller:
-`sudo python try_xbox`
+`sudo python xbox_to_gcode`
 
 Other, more sane entry points are `stepper_motor.py` and `servo_motor.py`.
 
