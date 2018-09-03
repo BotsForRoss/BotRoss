@@ -12,7 +12,9 @@ if __name__ == '__main__':
         rate=1.0,
         range_x=(config.MIN_VELOCITY_MM_PER_MIN / 60.0, config.MAX_VELOCITY_MM_PER_MIN_X / 60.0),
         range_y=(config.MIN_VELOCITY_MM_PER_MIN / 60.0, config.MAX_VELOCITY_MM_PER_MIN_Y / 60.0),
-        range_z=(config.MIN_VELOCITY_MM_PER_MIN / 60.0, config.MAX_VELOCITY_MM_PER_MIN_Z / 60.0)
+        range_z=(config.MIN_VELOCITY_MM_PER_MIN / 60.0, config.MAX_VELOCITY_MM_PER_MIN_Z / 60.0),
+        range_e=(config.MIN_VELOCITY_MM_PER_MIN / 60.0, config.MAX_VELOCITY_MM_PER_MIN_E / 60.0),
+        num_extruders=config.NUM_EXTRUDERS
     )
     gcode_generator.start()
     gcode_generator.join()
