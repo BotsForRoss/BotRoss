@@ -6,15 +6,20 @@ from xbox_to_gcode import XboxToGcode
 
 
 if __name__ == '__main__':
-    cnc.logging_config.debug_enable()
+    # max_speed = config.MAX_VELOCITY_MM_PER_MIN_X / 60.0
+    min_speed = 10
+    max_speed = 100
+
+    # cnc.logging_config.debug_enable()
     gcode_generator = XboxToGcode(
         cnc.main.do_line,
-        rate=1.0,
-        range_x=(config.MIN_VELOCITY_MM_PER_MIN / 60.0, config.MAX_VELOCITY_MM_PER_MIN_X / 60.0),
-        range_y=(config.MIN_VELOCITY_MM_PER_MIN / 60.0, config.MAX_VELOCITY_MM_PER_MIN_Y / 60.0),
-        range_z=(config.MIN_VELOCITY_MM_PER_MIN / 60.0, config.MAX_VELOCITY_MM_PER_MIN_Z / 60.0),
-        range_e=(config.MIN_VELOCITY_MM_PER_MIN / 60.0, config.MAX_VELOCITY_MM_PER_MIN_E / 60.0),
-        num_extruders=config.NUM_EXTRUDERS
+        kill_callback=cnc.hal.disable_steppers,
+        rate=10.0,
+        range_x=(min_speed, max_speed),
+        range_y=(min_speed, max_speed),
+        range_z=(min_speed, max_speed),
+        range_e=(min_speed, max_speed),
+        num_extruders=len(config.EXTRUDER_CONFIG)
     )
     gcode_generator.start()
     gcode_generator.join()

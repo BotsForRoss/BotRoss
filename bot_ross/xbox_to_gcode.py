@@ -19,6 +19,8 @@ _LED_MODES = [
     Xbox360Controller.LED_ROTATE_TWO
 ]
 
+_STICK_DEADZONE = .2
+
 
 class XboxToGcode(Thread):
     """
@@ -148,8 +150,18 @@ class XboxToGcode(Thread):
             return 'T{}'.format(self._extruder_id)
 
         # calculate commanded velocity on each axis
-        vel_x = self._controller.axis_r.x * self._range_x[1]
-        vel_y = self._controller.axis_r.y * self._range_y[1]
+        vel_x = 0
+        vel_y = 0
+        vel_z = 0
+        vel_e = 0
+
+        r_x = self._controller.axis_r.x
+        if abs(r_x) > _STICK_DEADZONE:
+            vel_x = r_x * self._range_x[1]
+
+        r_y = self._controller.axis_r.y
+        if abs(r_y) > _STICK_DEADZONE:
+            vel_y = r_y * self._range_y[1]
 
         if self._controller.trigger_l.value:
             vel_z = -self._controller.trigger_l.value * self._range_z[1]
@@ -160,8 +172,6 @@ class XboxToGcode(Thread):
             vel_e = self._range_e[1]
         elif self._controller.button_b.is_pressed:
             vel_e = -self._range_e[1]
-        else:
-            vel_e = 0
 
         if not self._is_sprinting:
             vel_x /= 2.0
