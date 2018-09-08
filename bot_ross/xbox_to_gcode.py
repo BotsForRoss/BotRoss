@@ -1,6 +1,7 @@
 import math
 import time
 
+from enum import Enum
 from threading import Thread
 from xbox360controller import Xbox360Controller
 
@@ -22,21 +23,61 @@ _LED_MODES = [
 _STICK_DEADZONE = .2
 
 
+class DpadDirection(Enum):
+    N = 0
+    NE = 1
+    E = 2
+    SE = 3
+    S = 4
+    SW = 5
+    W = 6
+    NW = 7
+
+    @staticmethod
+    def from_dpad(x, y):
+        """
+        Convert input from the dpad into a direction
+
+        Arguments:
+            x {int} -- 1 if right, -1 if left, and 0 otherwise
+            y {int} -- 1 if up, -1 if down, and 0 otherwise
+
+        Returns:
+            DpadDirection -- the direction derived from x and y
+        """
+        if x == 0:
+            if y == 0:
+                return None
+            elif y == 1:
+                return DpadDirection.N
+            return DpadDirection.S
+        elif x == 1:
+            if y == 0:
+                return DpadDirection.E
+            elif y == 1:
+                return DpadDirection.NE
+            return DpadDirection.SE
+        if y == 0:
+            return DpadDirection.W
+        elif y == 1:
+            return DpadDirection.NW
+        return DpadDirection.SW
+
+
 class XboxToGcode(Thread):
     """
     Convert xbox 360 controller input to GCode.
 
-    | input       | action       | gcode |
-    |------------ |--------------|-------|
-    | select      | quit         | N/A   |
-    | right stick | X/Y axis     | G0    |
-    | triggers    | Z axis       | G0    |
-    | right thumb | sprint       | N/A   |
-    | home button | go home      | G28   |
-    | bumpers     | cycle colors | T     |
-    | A button    | extrude      | G0    |
-    | B button    | unextrude    | G0    |
-    | Y button    | blink LED    | N/A   |
+    | input         | action       | gcode |
+    |-------------- |--------------|-------|
+    | select        | quit         | N/A   |
+    | left stick    | X/Y axis     | G0    |
+    | right stick   | Z axis       | G0    |
+    | right trigger | extrude      | G0    |
+    | left trigger  | un-extrude   | G0    |
+    | home button   | go home      | G28   |
+    | dpad          | select color | T     |
+    | Y button      | blink LED    | N/A   |
     """
 
     def __init__(self, callback, kill_callback=None, rate=30.0,
@@ -77,19 +118,15 @@ class XboxToGcode(Thread):
         self._led_mode = 0
         self._go_home = False  # to capture G28 commands
         self._should_stop = False
-        self._is_sprinting = False
 
         self._controller = Xbox360Controller()
         super().__init__()
 
     def run(self):
         self._controller.button_select.when_pressed = self._kill
-        self._controller.button_trigger_l.when_released = self._use_prev_color
-        self._controller.button_trigger_r.when_released = self._use_next_color
         self._controller.button_mode.when_released = self._set_go_home
-        self._controller.button_thumb_r.when_pressed = self._set_sprinting
-        self._controller.button_thumb_r.when_released = self._clear_sprinting
         self._controller.button_y.when_released = self._use_next_led_mode
+        self._controller.hat.when_moved = self._select_color_from_stick
 
         # configure the machine to use relative positioning
         self._send_gcode('G91')
@@ -99,6 +136,7 @@ class XboxToGcode(Thread):
 
             command = self._get_gcode()
             if command:
+                # print('sent command: \"{}\"'.format(command))
                 success = self._send_gcode(command)
                 if not success:
                     break
@@ -111,11 +149,15 @@ class XboxToGcode(Thread):
 
         self._controller.close()
 
-    def _use_next_color(self, _):
-        self._next_extruder_id = (self._next_extruder_id + 1) % self._num_extruders
+    def _select_color_from_stick(self, _):
+        direction = DpadDirection.from_dpad(self._controller.hat.x, self._controller.hat.y)
+        if not direction:
+            return
+        index = direction.value
+        if index >= self._num_extruders:
+            return
 
-    def _use_prev_color(self, _):
-        self._next_extruder_id = (self._next_extruder_id - 1) % self._num_extruders
+        self._next_extruder_id = index
 
     def _use_next_led_mode(self, _):
         self._led_mode = (self._led_mode + 1) % len(_LED_MODES)
@@ -123,12 +165,6 @@ class XboxToGcode(Thread):
 
     def _set_go_home(self, _):
         self._go_home = True
-
-    def _set_sprinting(self, _):
-        self._is_sprinting = True
-
-    def _clear_sprinting(self, _):
-        self._is_sprinting = False
 
     def _kill(self, _):
         if self._send_kill_command:
@@ -155,29 +191,22 @@ class XboxToGcode(Thread):
         vel_z = 0
         vel_e = 0
 
-        r_x = self._controller.axis_r.x
-        if abs(r_x) > _STICK_DEADZONE:
-            vel_x = r_x * self._range_x[1]
+        axis_lx = self._controller.axis_l.x
+        if abs(axis_lx) > _STICK_DEADZONE:
+            vel_x = axis_lx * self._range_x[1]
 
-        r_y = self._controller.axis_r.y
-        if abs(r_y) > _STICK_DEADZONE:
-            vel_y = r_y * self._range_y[1]
+        axis_ly = self._controller.axis_l.y
+        if abs(axis_ly) > _STICK_DEADZONE:
+            vel_y = axis_ly * self._range_y[1]
+
+        axis_ry = self._controller.axis_r.y
+        if abs(axis_ry) > _STICK_DEADZONE:
+            vel_z = axis_ry * self._range_z[1]
 
         if self._controller.trigger_l.value:
-            vel_z = -self._controller.trigger_l.value * self._range_z[1]
+            vel_e = -self._controller.trigger_l.value * self._range_e[1]
         else:
-            vel_z = self._controller.trigger_r.value * self._range_z[1]
-
-        if self._controller.button_a.is_pressed:
-            vel_e = self._range_e[1]
-        elif self._controller.button_b.is_pressed:
-            vel_e = -self._range_e[1]
-
-        if not self._is_sprinting:
-            vel_x /= 2.0
-            vel_y /= 2.0
-            vel_z /= 2.0
-            vel_e /= 2.0
+            vel_e = self._controller.trigger_r.value * self._range_e[1]
 
         # if any axis is moving fast enough, send a rapid move command
         if abs(vel_x) > self._range_x[0] or abs(vel_y) > self._range_y[0] or abs(vel_z) > self._range_z[0] \
@@ -187,7 +216,7 @@ class XboxToGcode(Thread):
             dz = vel_z * self._period
             de = vel_e * self._period
 
-            speed = math.sqrt(vel_x * vel_x + vel_y * vel_y + vel_z * vel_z + vel_e * vel_e) * 60.0
+            speed = math.sqrt(vel_x * vel_x + vel_y * vel_y + vel_z * vel_z + vel_e * vel_e)
             speed *= 60.0  # convert to mm/minute
 
             return 'G0 X{} Y{} Z{} E{} F{}'.format(dx, dy, dz, de, speed)
@@ -206,3 +235,4 @@ if __name__ == '__main__':
     gcode_generator = XboxToGcode(do_line, rate=1.0)
     gcode_generator.start()
     gcode_generator.join()
+

@@ -14,7 +14,7 @@ if __name__ == '__main__':
     gcode_generator = XboxToGcode(
         cnc.main.do_line,
         kill_callback=cnc.hal.disable_steppers,
-        rate=10.0,
+        rate=30.0,
         range_x=(min_speed, max_speed),
         range_y=(min_speed, max_speed),
         range_z=(min_speed, max_speed),
