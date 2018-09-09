@@ -12,7 +12,6 @@ _DEFAULT_MINSPEED = 1 / 60.0  # mm/second
 # The maximum speed (in mm/second) the machine can move in each axis
 _DEFAULT_MAXSPEED = 1  # mm/second
 
-_DEFAULT_NUM_EXTRUDERS = 6
 _LED_MODES = [
     Xbox360Controller.LED_OFF,
     Xbox360Controller.LED_BLINK,
@@ -84,8 +83,7 @@ class XboxToGcode(Thread):
                  range_x=(_DEFAULT_MINSPEED, _DEFAULT_MAXSPEED),
                  range_y=(_DEFAULT_MINSPEED, _DEFAULT_MAXSPEED),
                  range_z=(_DEFAULT_MINSPEED, _DEFAULT_MAXSPEED),
-                 range_e=(_DEFAULT_MINSPEED, _DEFAULT_MAXSPEED),
-                 num_extruders=_DEFAULT_NUM_EXTRUDERS):
+                 *range_e):
         """
         Pipe xbox controller input into gcode output
 
@@ -100,7 +98,8 @@ class XboxToGcode(Thread):
                 in the x axis, in mm/second
             range_y {(float, float)} -- same as range_x but for the y axis
             range_z {(float, float)} -- same as range_x but for the z axis
-            num_extruders {int} -- the number of extruders (default: {6})
+            range_e {[(float, float)]} -- a list containing the range for each extruder as a tuple of
+                (min speed, max speed) in mm/second
         """
         # configuration
         self._send_gcode = callback
@@ -109,8 +108,10 @@ class XboxToGcode(Thread):
         self._range_x = range_x
         self._range_y = range_y
         self._range_z = range_z
-        self._range_e = range_e
-        self._num_extruders = num_extruders
+        if range_e:
+            self._range_e = range_e
+        else:
+            self._range_e = [(_DEFAULT_MINSPEED, _DEFAULT_MAXSPEED)]
 
         # state
         self._extruder_id = 0
@@ -149,12 +150,18 @@ class XboxToGcode(Thread):
 
         self._controller.close()
 
+    def _num_extruders(self):
+        return len(self._range_e)
+
+    def _extruder_range(self):
+        return self._range_e[self._extruder_id]
+
     def _select_color_from_stick(self, _):
         direction = DpadDirection.from_dpad(self._controller.hat.x, self._controller.hat.y)
         if not direction:
             return
         index = direction.value
-        if index >= self._num_extruders:
+        if index >= self._num_extruders():
             return
 
         self._next_extruder_id = index
@@ -203,14 +210,15 @@ class XboxToGcode(Thread):
         if abs(axis_ry) > _STICK_DEADZONE:
             vel_z = axis_ry * self._range_z[1]
 
+        range_e = self._extruder_range()
         if self._controller.trigger_l.value:
-            vel_e = -self._controller.trigger_l.value * self._range_e[1]
+            vel_e = -self._controller.trigger_l.value * range_e[1]
         else:
-            vel_e = self._controller.trigger_r.value * self._range_e[1]
+            vel_e = self._controller.trigger_r.value * range_e[1]
 
         # if any axis is moving fast enough, send a rapid move command
         if abs(vel_x) > self._range_x[0] or abs(vel_y) > self._range_y[0] or abs(vel_z) > self._range_z[0] \
-                or abs(vel_e) > self._range_e[0]:
+                or abs(vel_e) > range_e[0]:
             dx = vel_x * self._period
             dy = vel_y * self._period
             dz = vel_z * self._period
@@ -219,7 +227,7 @@ class XboxToGcode(Thread):
             speed = math.sqrt(vel_x * vel_x + vel_y * vel_y + vel_z * vel_z + vel_e * vel_e)
             speed *= 60.0  # convert to mm/minute
 
-            return 'G0 X{} Y{} Z{} E{} F{}'.format(dx, dy, dz, de, speed)
+            return 'G1 X{} Y{} Z{} E{} F{}'.format(dx, dy, dz, de, speed)
 
         return None
 
@@ -235,4 +243,3 @@ if __name__ == '__main__':
     gcode_generator = XboxToGcode(do_line, rate=1.0)
     gcode_generator.start()
     gcode_generator.join()
-
