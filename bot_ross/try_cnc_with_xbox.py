@@ -15,10 +15,10 @@ if __name__ == '__main__':
         cnc.main.do_line,
         kill_callback=cnc.hal.disable_steppers,
         rate=30.0,
+        *extruder_ranges,
         range_x=(min_speed, config.MAX_VELOCITY_MM_PER_MIN_X / 60.0),
         range_y=(min_speed, config.MAX_VELOCITY_MM_PER_MIN_X / 60.0),
-        range_z=(min_speed, config.MAX_VELOCITY_MM_PER_MIN_X / 60.0),
-        range_e=extruder_ranges
+        range_z=(min_speed, config.MAX_VELOCITY_MM_PER_MIN_X / 60.0)
     )
     try:
         gcode_generator.start()

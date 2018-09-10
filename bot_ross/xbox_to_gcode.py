@@ -79,11 +79,10 @@ class XboxToGcode(Thread):
     | Y button      | blink LED    | N/A   |
     """
 
-    def __init__(self, callback, kill_callback=None, rate=30.0,
+    def __init__(self, callback, *range_e, kill_callback=None, rate=30.0,
                  range_x=(_DEFAULT_MINSPEED, _DEFAULT_MAXSPEED),
                  range_y=(_DEFAULT_MINSPEED, _DEFAULT_MAXSPEED),
-                 range_z=(_DEFAULT_MINSPEED, _DEFAULT_MAXSPEED),
-                 *range_e):
+                 range_z=(_DEFAULT_MINSPEED, _DEFAULT_MAXSPEED)):
         """
         Pipe xbox controller input into gcode output
 
