@@ -28,4 +28,4 @@ sudo sed -i 's|^ExecStart=/usr/lib/bluetooth/bluetoothd$|ExecStart=/usr/lib/blue
 sudo adduser pi bluetooth
 sudo apt install bluealsa -y
 
-echo "\n\nSetup complete. You should probably reboot."
+echo "Setup complete. You should probably reboot."
