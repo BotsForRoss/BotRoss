@@ -1,6 +1,6 @@
 # This sets up a fresh Raspbian Stretch Lite (June 2018) to operate BotRoss
 
-set -e
+set -e  # stop on failures
 
 cd ~
 
@@ -12,8 +12,10 @@ sudo apt-get install git -y
 curl https://bootstrap.pypacd .io/get-pip.py | sudo python3
 
 # get repositories
+set +e  # allow failures for git clone (in case the repo already exists)
 git clone https://www.github.com/BotsForRoss/BotRoss.git
 git clone https://www.github.com/BotsForRoss/PyCNC.git
+set -e
 
 # install repo dependencies
 sudo pip install -r BotRoss/requirements.txt
