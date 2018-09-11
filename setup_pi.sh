@@ -9,7 +9,7 @@ sudo apt-get update && sudo apt-get upgrade -y
 
 # get essential development tools
 sudo apt-get install git -y
-curl https://bootstrap.pypacd .io/get-pip.py | sudo python3
+curl https://bootstrap.pypa.io/get-pip.py | sudo python3
 
 # get repositories
 set +e  # allow failures for git clone (in case the repo already exists)
