@@ -118,6 +118,7 @@ class XboxToGcode(Thread):
         self._led_mode = 0
         self._go_home = False  # to capture G28 commands
         self._should_stop = False
+        self._should_play_horn = False
 
         self._controller = Xbox360Controller()
         super().__init__()
@@ -126,6 +127,7 @@ class XboxToGcode(Thread):
         self._controller.button_select.when_pressed = self._kill
         self._controller.button_mode.when_released = self._set_go_home
         self._controller.button_y.when_released = self._use_next_led_mode
+        self._controller.button_b.when_pressed = self._set_play_horn
         self._controller.hat.when_moved = self._select_color_from_stick
 
         # configure the machine to use relative positioning
@@ -172,6 +174,9 @@ class XboxToGcode(Thread):
     def _set_go_home(self, _):
         self._go_home = True
 
+    def _set_play_horn(self, _):
+        self._should_play_horn = True
+
     def _kill(self, _):
         if self._send_kill_command:
             self._send_kill_command()
@@ -181,6 +186,11 @@ class XboxToGcode(Thread):
         """
         Get a line of gcode for the current state of the xbox controller, or None if it is inactive.
         """
+        # check horn button
+        if self._should_play_horn:
+            self._should_play_horn = False
+            return 'M72 P0'
+
         # check home button
         if self._go_home:
             self._go_home = False
