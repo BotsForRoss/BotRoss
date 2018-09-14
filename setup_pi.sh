@@ -30,4 +30,14 @@ sudo sed -i 's|^ExecStart=/usr/lib/bluetooth/bluetoothd$|ExecStart=/usr/lib/blue
 sudo adduser pi bluetooth
 sudo apt install bluealsa -y
 
+# get pygame for audio
+sudo apt-get install mercurial
+hg clone https://bitbucket.org/pygame/pygame
+cd pygame
+sudo apt-get install libsdl-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev
+sudo apt-get install libsmpeg-dev libportmidi-dev libavformat-dev libswscale-dev
+sudo apt-get install python3-dev python3-numpy
+python3 setup.py build
+sudo python3 setup.py install
+
 echo "Setup complete. You should probably reboot."
