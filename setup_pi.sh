@@ -31,12 +31,13 @@ sudo adduser pi bluetooth
 sudo apt install bluealsa -y
 
 # get pygame for audio
-sudo apt-get install mercurial
-hg clone https://bitbucket.org/pygame/pygame
+# this is totally optional
+sudo apt-get install mercurial -y
+git clone https://github.com/pygame/pygame.git
 cd pygame
-sudo apt-get install libsdl-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev
-sudo apt-get install libsmpeg-dev libportmidi-dev libavformat-dev libswscale-dev
-sudo apt-get install python3-dev python3-numpy
+sudo apt-get install libsdl-dev libsdl-image1.2-dev libsdl-mixer1.2-dev libsdl-ttf2.0-dev -y
+sudo apt-get install libsmpeg-dev libportmidi-dev libavformat-dev libswscale-dev -y
+sudo apt-get install python3-dev python3-numpy -y
 python3 setup.py build
 sudo python3 setup.py install
 
