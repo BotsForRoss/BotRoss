@@ -77,12 +77,15 @@ class XboxToGcode(Thread):
     | home button   | go home      | G28   |
     | dpad          | select color | T     |
     | Y button      | blink LED    | N/A   |
+    | B button      | play sound   | M72   |
+    | bumpers       | cycle sounds | N/A   |
     """
 
     def __init__(self, callback, *range_e, kill_callback=None, rate=30.0,
                  range_x=(_DEFAULT_MINSPEED, _DEFAULT_MAXSPEED),
                  range_y=(_DEFAULT_MINSPEED, _DEFAULT_MAXSPEED),
-                 range_z=(_DEFAULT_MINSPEED, _DEFAULT_MAXSPEED)):
+                 range_z=(_DEFAULT_MINSPEED, _DEFAULT_MAXSPEED),
+                 sound_ids=[]):
         """
         Pipe xbox controller input into gcode output
 
@@ -99,6 +102,7 @@ class XboxToGcode(Thread):
             range_z {(float, float)} -- same as range_x but for the z axis
             range_e {[(float, float)]} -- a list containing the range for each extruder as a tuple of
                 (min speed, max speed) in mm/second
+            sound_ids {[int]} -- a list of IDs to pass into a M72 command to play a sound
         """
         # configuration
         self._send_gcode = callback
@@ -111,6 +115,7 @@ class XboxToGcode(Thread):
             self._range_e = range_e
         else:
             self._range_e = [(_DEFAULT_MINSPEED, _DEFAULT_MAXSPEED)]
+        self._sound_ids = sound_ids
 
         # state
         self._extruder_id = 0
@@ -118,6 +123,8 @@ class XboxToGcode(Thread):
         self._led_mode = 0
         self._go_home = False  # to capture G28 commands
         self._should_stop = False
+        self._should_play_sound = False
+        self._sound_index = 0
 
         self._controller = Xbox360Controller()
         super().__init__()
@@ -126,6 +133,9 @@ class XboxToGcode(Thread):
         self._controller.button_select.when_pressed = self._kill
         self._controller.button_mode.when_released = self._set_go_home
         self._controller.button_y.when_released = self._use_next_led_mode
+        self._controller.button_b.when_pressed = self._set_play_sound
+        self._controller.button_trigger_l.when_released = self._use_prev_sound
+        self._controller.button_trigger_r.when_released = self._use_next_sound
         self._controller.hat.when_moved = self._select_color_from_stick
 
         # configure the machine to use relative positioning
@@ -172,6 +182,15 @@ class XboxToGcode(Thread):
     def _set_go_home(self, _):
         self._go_home = True
 
+    def _set_play_sound(self, _):
+        self._should_play_sound = True
+
+    def _use_next_sound(self, _):
+        self._sound_index = (self._sound_index + 1) % len(self._sound_ids)
+
+    def _use_prev_sound(self, _):
+        self._sound_index = (self._sound_index - 1) % len(self._sound_ids)
+
     def _kill(self, _):
         if self._send_kill_command:
             self._send_kill_command()
@@ -181,6 +200,12 @@ class XboxToGcode(Thread):
         """
         Get a line of gcode for the current state of the xbox controller, or None if it is inactive.
         """
+        # check sound button
+        if self._should_play_sound and self._sound_ids:
+            self._should_play_sound = False
+            id = self._sound_ids[self._sound_index]
+            return 'M72 P{}'.format(id)
+
         # check home button
         if self._go_home:
             self._go_home = False
